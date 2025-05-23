@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Exclude sensitive documents from cloud backup -->
+        <exclude domain="external" path="Documents/" />
+        <exclude domain="external" path="PDFs/" />
+        <!-- Allow preferences backup -->
+        <include domain="sharedpref" path="." />
+    </cloud-backup>
+    <device-transfer>
+        <!-- Exclude documents from device transfer for privacy -->
+        <exclude domain="external" path="Documents/" />
+        <exclude domain="external" path="PDFs/" />
+    </device-transfer>
+</data-extraction-rules> 

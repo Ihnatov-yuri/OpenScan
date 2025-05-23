@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    
+    <!-- Background circle -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M36,0c19.9,0 36,16.1 36,36s-16.1,36 -36,36S0,55.9 0,36S16.1,0 36,0z" />
+    
+    <!-- Document icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,16h24c1.5,0 3,1.5 3,3v34c0,1.5 -1.5,3 -3,3H20c-1.5,0 -3,-1.5 -3,-3V19C17,17.5 18.5,16 20,16z" />
+    
+    <!-- Scanner lines -->
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M22,22h20v1H22V22z" />
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M22,26h20v1H22V26z" />
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M22,30h16v1H22V30z" />
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M22,34h18v1H22V34z" />
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M22,38h20v1H22V38z" />
+    <path
+        android:fillColor="#2196F3"
+        android:pathData="M22,42h14v1H22V42z" />
+    
+    <!-- Camera lens -->
+    <path
+        android:fillColor="#4CAF50"
+        android:pathData="M40,42c3.3,0 6,2.7 6,6s-2.7,6 -6,6s-6,-2.7 -6,-6S36.7,42 40,42z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M40,45c1.7,0 3,1.3 3,3s-1.3,3 -3,3s-3,-1.3 -3,-3S38.3,45 40,45z" />
+</vector> 

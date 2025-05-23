@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.OpenScan" parent="Theme.AppCompat.DayNight">
+        <!-- Customize your light theme here. -->
+        <item name="colorPrimary">@color/scanner_primary</item>
+        <item name="colorPrimaryDark">@color/scanner_primary</item>
+        <item name="colorAccent">@color/scanner_secondary</item>
+        <item name="android:statusBarColor">@color/scanner_primary</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources> 
