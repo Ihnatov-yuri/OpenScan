@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <!-- Exclude documents and PDFs from backup for privacy -->
-    <exclude domain="external" path="Documents/" />
-    <exclude domain="external" path="PDFs/" />
     <!-- Include app preferences -->
     <include domain="sharedpref" path="." />
+    <!-- Include app data -->
+    <include domain="file" path="." />
 </full-backup-content> 

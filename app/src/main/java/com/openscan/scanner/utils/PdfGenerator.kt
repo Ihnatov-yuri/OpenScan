@@ -1,5 +1,6 @@
 package com.openscan.scanner.utils
 
+import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
@@ -124,12 +125,17 @@ class PdfGenerator(private val context: Context) {
         }
     }
     
+    @SuppressLint("NewApi")
     private fun createPdfWithMediaStore(
         fileName: String,
         imagePaths: List<String>,
         settings: PdfSettings
     ): Result<String> {
         return try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                return Result.failure(Exception("MediaStore API not available"))
+            }
+            
             val contentValues = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, fileName)
                 put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
@@ -360,8 +366,13 @@ class PdfGenerator(private val context: Context) {
         }
     }
     
+    @SuppressLint("NewApi")
     private fun saveTempFileToDownloadsMediaStore(tempFile: File, fileName: String): Result<String> {
         return try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                return Result.failure(Exception("MediaStore API not available"))
+            }
+            
             val contentValues = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, fileName)
                 put(MediaStore.Downloads.MIME_TYPE, "application/pdf")
