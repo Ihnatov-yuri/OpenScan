@@ -35,6 +35,7 @@ android {
     }
     buildFeatures {
         compose true
+        buildConfig true
     }
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.4'
@@ -66,11 +67,15 @@ dependencies {
     // Google Play Services, so the app needs no camera permission of its own.
     implementation 'com.google.android.gms:play-services-mlkit-document-scanner:16.0.0-beta1'
 
+    // On-device OCR (text extraction from scanned pages)
+    implementation 'com.google.mlkit:text-recognition:16.0.1'
+
     // Image loading for page thumbnails
     implementation 'io.coil-kt:coil-compose:2.5.0'
 
-    // Coroutines
+    // Coroutines (+ await() bridge for Google Play Services Tasks)
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3'
 
     // Testing
     testImplementation 'junit:junit:4.13.2'
