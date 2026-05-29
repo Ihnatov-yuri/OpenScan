@@ -6,27 +6,33 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.openscan.scanner.data.DocumentStore
 import com.openscan.scanner.data.ScannedDocument
+import com.openscan.scanner.data.SortOrder
+import com.openscan.scanner.data.TextExtractor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 data class HomeUiState(
     val loading: Boolean = true,
-    val documents: List<ScannedDocument> = emptyList()
+    val documents: List<ScannedDocument> = emptyList(),
+    val query: String = "",
+    val sortOrder: SortOrder = SortOrder.NEWEST,
+    val totalDocs: Int = 0,
+    val storageBytes: Long = 0L
 ) {
-    val isEmpty: Boolean get() = !loading && documents.isEmpty()
+    val isEmpty: Boolean get() = !loading && totalDocs == 0
+    val noResults: Boolean get() = !loading && totalDocs > 0 && documents.isEmpty()
 }
 
-/**
- * Owns the saved-document list and all storage side effects so the UI stays
- * declarative. Storage I/O is moved off the main thread.
- */
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     val store = DocumentStore(app)
+
+    private var allDocs: List<ScannedDocument> = emptyList()
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -37,18 +43,40 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     fun refresh() {
         viewModelScope.launch {
-            val docs = withContext(Dispatchers.IO) { store.list() }
-            _uiState.value = HomeUiState(loading = false, documents = docs)
+            val order = _uiState.value.sortOrder
+            val docs = withContext(Dispatchers.IO) { store.list(order) }
+            val bytes = withContext(Dispatchers.IO) { store.totalBytes() }
+            allDocs = docs
+            _uiState.update { it.copy(loading = false, totalDocs = docs.size, storageBytes = bytes) }
+            applyFilter()
         }
     }
 
-    fun saveScan(pdfUri: Uri, firstPageUri: Uri?, pageCount: Int, onSaved: (ScannedDocument) -> Unit) {
+    fun setQuery(query: String) {
+        _uiState.update { it.copy(query = query) }
+        applyFilter()
+    }
+
+    fun setSort(order: SortOrder) {
+        _uiState.update { it.copy(sortOrder = order) }
+        refresh()
+    }
+
+    fun saveScan(pageUris: List<Uri>, onSaved: (ScannedDocument) -> Unit = {}) {
+        if (pageUris.isEmpty()) return
         viewModelScope.launch {
-            val doc = withContext(Dispatchers.IO) {
-                store.save(pdfUri, firstPageUri, pageCount)
-            }
+            val doc = withContext(Dispatchers.IO) { store.save(pageUris) }
             refresh()
             onSaved(doc)
+        }
+    }
+
+    fun appendScan(doc: ScannedDocument, pageUris: List<Uri>, onDone: (ScannedDocument) -> Unit = {}) {
+        if (pageUris.isEmpty()) return
+        viewModelScope.launch {
+            val updated = withContext(Dispatchers.IO) { store.append(doc, pageUris) }
+            refresh()
+            onDone(updated)
         }
     }
 
@@ -66,10 +94,26 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun deleteAll() {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { store.deleteAll() }
+            refresh()
+        }
+    }
+
     fun exportToDownloads(doc: ScannedDocument, onResult: (String?) -> Unit) {
         viewModelScope.launch {
             val name = withContext(Dispatchers.IO) { store.exportToDownloads(doc) }
             onResult(name)
+        }
+    }
+
+    fun extractText(doc: ScannedDocument, onResult: (Result<String>) -> Unit) {
+        viewModelScope.launch {
+            val result = runCatching {
+                TextExtractor.extract(getApplication(), doc.pageImages)
+            }
+            onResult(result)
         }
     }
 }

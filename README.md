@@ -22,10 +22,14 @@ permission**.
   color / grayscale / auto-enhance filters in the built-in editor
 - 🖼️ **Import from gallery** — scan an existing photo instead of using the camera
 - 📄 **Multi-page PDFs** — combine up to 30 pages into one document
+- ➕ **Add pages** — append more scans to an existing document and rebuild its PDF
+- 🔤 **Extract text (OCR)** — on-device text recognition; copy or share the result
+- 🔎 **Search & sort** — filter by name and sort by date, name, or size
 - 🗂️ **Library** — saved scans listed with thumbnails, page count, size and date
 - 📤 **Share** — send the PDF to any app via the system share sheet
 - ⬇️ **Save to Downloads** — export the PDF to the public Downloads folder
 - ✏️ **Rename / Delete** — manage your saved documents
+- ℹ️ **About screen** — app info, storage usage, and a one-tap "clear all"
 - 🔒 **Local first** — documents are stored only in the app's own storage
 
 ## 🏗️ Architecture
@@ -41,6 +45,8 @@ permission**.
 ### Stack
 - **UI:** Jetpack Compose + Material 3 (dynamic color on Android 12+)
 - **Scanning:** `play-services-mlkit-document-scanner`
+- **OCR:** `mlkit:text-recognition` (on-device)
+- **PDF:** Android `PdfDocument` (no third-party PDF library)
 - **Images:** Coil for thumbnails
 - **Async:** Kotlin Coroutines
 
@@ -87,6 +93,10 @@ app/src/main/java/com/openscan/scanner/
     ├── components/ (DocumentRow, EmptyState)
     └── theme/
 ```
+
+## 👤 Creator
+
+Created by **[Yuri Ihnatov](https://ihnatov.nl)** — [ihnatov.nl](https://ihnatov.nl).
 
 ## 📄 License
 

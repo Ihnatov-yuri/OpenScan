@@ -19,7 +19,9 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -51,6 +53,8 @@ fun DocumentRow(
     onOpen: () -> Unit,
     onShare: () -> Unit,
     onExport: () -> Unit,
+    onAppend: () -> Unit,
+    onExtractText: () -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
@@ -105,6 +109,16 @@ fun DocumentRow(
                         text = { Text("Save to Downloads") },
                         leadingIcon = { Icon(Icons.Default.Download, null) },
                         onClick = { menuOpen = false; onExport() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Add pages") },
+                        leadingIcon = { Icon(Icons.Default.PostAdd, null) },
+                        onClick = { menuOpen = false; onAppend() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Extract text") },
+                        leadingIcon = { Icon(Icons.Default.TextFields, null) },
+                        onClick = { menuOpen = false; onExtractText() }
                     )
                     DropdownMenuItem(
                         text = { Text("Rename") },

@@ -3,15 +3,17 @@ package com.openscan.scanner.data
 import java.io.File
 
 /**
- * A single saved scan: one PDF (possibly multi-page) plus an optional
- * thumbnail generated from its first page.
+ * A single saved scan: a folder holding one or more perspective-corrected page
+ * images plus a generated multi-page PDF.
  */
 data class ScannedDocument(
     val id: String,
     val name: String,
-    val pageCount: Int,
     val createdAt: Long,
     val sizeBytes: Long,
     val pdfFile: File,
-    val thumbnailFile: File?
-)
+    val pageImages: List<File>
+) {
+    val pageCount: Int get() = pageImages.size
+    val thumbnailFile: File? get() = pageImages.firstOrNull()
+}
