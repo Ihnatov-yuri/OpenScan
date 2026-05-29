@@ -2,28 +2,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Camera permission is essential for document scanning -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    
-    <!-- Storage permissions for saving PDFs -->
+    <!--
+        The ML Kit Document Scanner captures and processes pages inside Google
+        Play Services, so this app does NOT need the CAMERA permission itself.
+        The only permission we declare is legacy storage, used solely to export
+        a finished PDF to the public Downloads folder on Android 9 and below.
+    -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    
-    <!-- Modern storage permissions for Android 13+ -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    
-    <!-- Ensure camera hardware is available -->
+
+    <!-- Camera is used (by Play Services) but not strictly required, so the app
+         stays installable on devices without a camera. -->
     <uses-feature
         android:name="android.hardware.camera"
-        android:required="true" />
-    <uses-feature
-        android:name="android.hardware.camera.autofocus"
         android:required="false" />
 
     <application
-        android:allowBackup="false"
+        android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -32,7 +27,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OpenScan"
         tools:targetApi="31">
-        
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -42,11 +37,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
-        <!-- File provider for sharing PDFs -->
+
+        <!-- File provider for sharing/viewing saved PDFs and page images -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.openscan.scanner.fileprovider"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data
@@ -54,4 +49,4 @@
                 android:resource="@xml/file_paths" />
         </provider>
     </application>
-</manifest> 
+</manifest>
