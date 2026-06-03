@@ -62,6 +62,17 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
+    /** Recompute the displayed list from [allDocs] using the current query. */
+    private fun applyFilter() {
+        val query = _uiState.value.query.trim()
+        val filtered = if (query.isEmpty()) {
+            allDocs
+        } else {
+            allDocs.filter { it.name.contains(query, ignoreCase = true) }
+        }
+        _uiState.update { it.copy(documents = filtered) }
+    }
+
     fun saveScan(pageUris: List<Uri>, onSaved: (ScannedDocument) -> Unit = {}) {
         if (pageUris.isEmpty()) return
         viewModelScope.launch {
