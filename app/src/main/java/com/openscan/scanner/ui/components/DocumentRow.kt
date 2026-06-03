@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material.icons.filled.Share
@@ -39,9 +40,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.openscan.scanner.data.ScannedDocument
 import com.openscan.scanner.ui.formatPageCount
 import com.openscan.scanner.ui.formatSize
@@ -54,6 +57,7 @@ fun DocumentRow(
     onShare: () -> Unit,
     onExport: () -> Unit,
     onAppend: () -> Unit,
+    onManagePages: () -> Unit,
     onExtractText: () -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
@@ -116,6 +120,11 @@ fun DocumentRow(
                         onClick = { menuOpen = false; onAppend() }
                     )
                     DropdownMenuItem(
+                        text = { Text("Manage pages") },
+                        leadingIcon = { Icon(Icons.Default.PhotoLibrary, null) },
+                        onClick = { menuOpen = false; onManagePages() }
+                    )
+                    DropdownMenuItem(
                         text = { Text("Extract text") },
                         leadingIcon = { Icon(Icons.Default.TextFields, null) },
                         onClick = { menuOpen = false; onExtractText() }
@@ -146,9 +155,17 @@ private fun Thumbnail(doc: ScannedDocument) {
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
-        if (doc.thumbnailFile != null) {
+        val thumb = doc.thumbnailFile
+        if (thumb != null) {
+            val context = LocalContext.current
             AsyncImage(
-                model = doc.thumbnailFile,
+                // Page files can be rewritten in place (reorder/delete), so key the
+                // cache on lastModified to avoid showing a stale thumbnail.
+                model = ImageRequest.Builder(context)
+                    .data(thumb)
+                    .memoryCacheKey(thumb.path + thumb.lastModified())
+                    .diskCacheKey(thumb.path + thumb.lastModified())
+                    .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(width = 52.dp, height = 68.dp)

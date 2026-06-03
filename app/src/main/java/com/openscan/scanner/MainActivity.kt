@@ -26,6 +26,7 @@ import com.openscan.scanner.ui.AboutScreen
 import com.openscan.scanner.ui.HomeScreen
 import com.openscan.scanner.ui.HomeViewModel
 import com.openscan.scanner.ui.OcrResultScreen
+import com.openscan.scanner.ui.PageManagerScreen
 import com.openscan.scanner.ui.ProgressDialog
 import com.openscan.scanner.ui.openPdf
 import com.openscan.scanner.ui.sharePdf
@@ -35,6 +36,7 @@ private sealed interface Screen {
     object Home : Screen
     object About : Screen
     data class Ocr(val title: String, val text: String) : Screen
+    data class Pages(val docId: String) : Screen
 }
 
 class MainActivity : ComponentActivity() {
@@ -114,6 +116,7 @@ class MainActivity : ComponentActivity() {
                             onShare = { doc -> sharePdf(context, viewModel.store.contentUri(doc.pdfFile), doc.name) },
                             onExport = { doc, cb -> viewModel.exportToDownloads(doc, cb) },
                             onAppend = { doc -> launchScanner(doc) },
+                            onManagePages = { doc -> screen = Screen.Pages(doc.id) },
                             onExtractText = { doc -> runOcr(doc) },
                             onRename = { doc, newName -> viewModel.rename(doc, newName) },
                             onDelete = { doc -> viewModel.delete(doc) }
@@ -124,9 +127,31 @@ class MainActivity : ComponentActivity() {
                             AboutScreen(
                                 storageBytes = state.storageBytes,
                                 documentCount = state.totalDocs,
+                                quality = viewModel.pdfQuality,
+                                onQualityChange = { viewModel.pdfQuality = it },
                                 onClearAll = { viewModel.deleteAll() },
                                 onBack = { screen = Screen.Home }
                             )
+                        }
+
+                        is Screen.Pages -> {
+                            BackHandler { screen = Screen.Home }
+                            val doc = state.documents.firstOrNull { it.id == current.docId }
+                            if (doc == null) {
+                                screen = Screen.Home
+                            } else {
+                                PageManagerScreen(
+                                    doc = doc,
+                                    onMoveUp = { index -> viewModel.reorderPage(doc, index, index - 1) {} },
+                                    onMoveDown = { index -> viewModel.reorderPage(doc, index, index + 1) {} },
+                                    onDeletePage = { index ->
+                                        viewModel.deletePage(doc, index) { updated ->
+                                            if (updated == null) screen = Screen.Home
+                                        }
+                                    },
+                                    onBack = { screen = Screen.Home }
+                                )
+                            }
                         }
 
                         is Screen.Ocr -> {

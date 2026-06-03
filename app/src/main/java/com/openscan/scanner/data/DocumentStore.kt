@@ -30,7 +30,7 @@ enum class SortOrder(val label: String) {
  *
  * Keeping the page images lets us append pages, regenerate the PDF, and run OCR.
  */
-class DocumentStore(private val context: Context) {
+class DocumentStore(private val context: Context, private val prefs: AppPrefs) {
 
     private val root: File by lazy {
         File(context.getExternalFilesDir(null), DIR_NAME).apply { mkdirs() }
@@ -68,6 +68,35 @@ class DocumentStore(private val context: Context) {
         copyPages(pageUris, dir, startIndex = doc.pageImages.size)
         regeneratePdf(dir)
         return requireNotNull(read(dir)) { "Failed to append pages" }
+    }
+
+    /** Reorder the document's pages (moving the page at [from] to [to]) and rebuild its PDF. */
+    fun reorderPage(doc: ScannedDocument, from: Int, to: Int): ScannedDocument {
+        val dir = doc.pdfFile.parentFile ?: error("Missing document folder")
+        val pages = doc.pageImages.toMutableList()
+        if (from !in pages.indices || to !in pages.indices) return doc
+        pages.add(to, pages.removeAt(from))
+        applyPageOrder(dir, pages)
+        regeneratePdf(dir)
+        return requireNotNull(read(dir)) { "Failed to reorder pages" }
+    }
+
+    /**
+     * Delete a single page and rebuild the PDF. Returns the updated document, or
+     * null if that was the last page (in which case the whole document is removed).
+     */
+    fun deletePage(doc: ScannedDocument, index: Int): ScannedDocument? {
+        val dir = doc.pdfFile.parentFile ?: return doc
+        val pages = doc.pageImages.toMutableList()
+        if (index !in pages.indices) return doc
+        pages.removeAt(index)
+        if (pages.isEmpty()) {
+            delete(doc)
+            return null
+        }
+        applyPageOrder(dir, pages)
+        regeneratePdf(dir)
+        return read(dir)
     }
 
     fun rename(doc: ScannedDocument, newName: String) {
@@ -153,7 +182,27 @@ class DocumentStore(private val context: Context) {
     private fun regeneratePdf(dir: File) {
         val pages = dir.listFiles { f -> f.isFile && f.name.startsWith(PAGE_PREFIX) }
             ?.sortedBy { it.name } ?: emptyList()
-        PdfBuilder.build(pages, File(dir, PDF_NAME))
+        PdfBuilder.build(pages, File(dir, PDF_NAME), prefs.pdfQuality.maxEdgePx)
+    }
+
+    /**
+     * Rewrite the page image files so that [kept] becomes page_000, page_001, …
+     * (in the given order). Any existing page file not in [kept] is deleted.
+     * Renames go through temp names first to avoid clobbering.
+     */
+    private fun applyPageOrder(dir: File, kept: List<File>) {
+        val keptPaths = kept.map { it.absolutePath }.toSet()
+        dir.listFiles { f -> f.isFile && f.name.startsWith(PAGE_PREFIX) }?.forEach { existing ->
+            if (existing.absolutePath !in keptPaths) existing.delete()
+        }
+        val temps = kept.mapIndexed { i, file ->
+            val tmp = File(dir, "tmp_%03d.jpg".format(i))
+            file.renameTo(tmp)
+            tmp
+        }
+        temps.forEachIndexed { i, tmp ->
+            tmp.renameTo(File(dir, "%s%03d.jpg".format(PAGE_PREFIX, i)))
+        }
     }
 
     private fun writeName(dir: File, name: String) = File(dir, NAME_FILE).writeText(name)

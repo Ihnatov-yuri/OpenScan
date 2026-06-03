@@ -4,7 +4,9 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.openscan.scanner.data.AppPrefs
 import com.openscan.scanner.data.DocumentStore
+import com.openscan.scanner.data.PdfQuality
 import com.openscan.scanner.data.ScannedDocument
 import com.openscan.scanner.data.SortOrder
 import com.openscan.scanner.data.TextExtractor
@@ -30,7 +32,12 @@ data class HomeUiState(
 
 class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
-    val store = DocumentStore(app)
+    private val prefs = AppPrefs(app)
+    val store = DocumentStore(app, prefs)
+
+    var pdfQuality: PdfQuality
+        get() = prefs.pdfQuality
+        set(value) { prefs.pdfQuality = value }
 
     private var allDocs: List<ScannedDocument> = emptyList()
 
@@ -88,6 +95,22 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             val updated = withContext(Dispatchers.IO) { store.append(doc, pageUris) }
             refresh()
             onDone(updated)
+        }
+    }
+
+    fun reorderPage(doc: ScannedDocument, from: Int, to: Int, onUpdated: (ScannedDocument) -> Unit) {
+        viewModelScope.launch {
+            val updated = withContext(Dispatchers.IO) { store.reorderPage(doc, from, to) }
+            refresh()
+            onUpdated(updated)
+        }
+    }
+
+    fun deletePage(doc: ScannedDocument, index: Int, onUpdated: (ScannedDocument?) -> Unit) {
+        viewModelScope.launch {
+            val updated = withContext(Dispatchers.IO) { store.deletePage(doc, index) }
+            refresh()
+            onUpdated(updated)
         }
     }
 

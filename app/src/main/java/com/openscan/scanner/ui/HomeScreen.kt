@@ -58,6 +58,7 @@ fun HomeScreen(
     onShare: (ScannedDocument) -> Unit,
     onExport: (ScannedDocument, (String?) -> Unit) -> Unit,
     onAppend: (ScannedDocument) -> Unit,
+    onManagePages: (ScannedDocument) -> Unit,
     onExtractText: (ScannedDocument) -> Unit,
     onRename: (ScannedDocument, String) -> Unit,
     onDelete: (ScannedDocument) -> Unit
@@ -160,6 +161,7 @@ fun HomeScreen(
                                     }
                                 },
                                 onAppend = { onAppend(doc) },
+                                onManagePages = { onManagePages(doc) },
                                 onExtractText = { onExtractText(doc) },
                                 onRename = { renameTarget = doc },
                                 onDelete = { deleteTarget = doc }

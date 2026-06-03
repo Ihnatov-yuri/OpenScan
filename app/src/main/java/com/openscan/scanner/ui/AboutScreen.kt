@@ -5,12 +5,14 @@ import android.net.Uri
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -32,11 +35,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.openscan.scanner.BuildConfig
+import com.openscan.scanner.data.PdfQuality
 
 private const val CREATOR_NAME = "Yuri Ihnatov"
 private const val CREATOR_URL = "https://ihnatov.nl"
@@ -46,11 +51,14 @@ private const val CREATOR_URL = "https://ihnatov.nl"
 fun AboutScreen(
     storageBytes: Long,
     documentCount: Int,
+    quality: PdfQuality,
+    onQualityChange: (PdfQuality) -> Unit,
     onClearAll: () -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
+    var selectedQuality by remember { mutableStateOf(quality) }
 
     Scaffold(
         topBar = {
@@ -96,6 +104,43 @@ fun AboutScreen(
                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(CREATOR_URL)))
                     }
                 )
+            }
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("PDF quality", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Applies to new scans and page edits.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    PdfQuality.values().forEach { option ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = option == selectedQuality,
+                                    onClick = {
+                                        selectedQuality = option
+                                        onQualityChange(option)
+                                    }
+                                )
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = option == selectedQuality,
+                                onClick = {
+                                    selectedQuality = option
+                                    onQualityChange(option)
+                                }
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(option.label, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
             }
 
             Card(modifier = Modifier.fillMaxWidth()) {

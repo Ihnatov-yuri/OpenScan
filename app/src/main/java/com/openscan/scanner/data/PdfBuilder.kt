@@ -12,15 +12,15 @@ import java.io.File
  */
 object PdfBuilder {
 
-    /** Cap the longest page edge to keep file size and memory reasonable. */
-    private const val MAX_EDGE_PX = 2480
+    /** Default cap for the longest page edge when none is supplied. */
+    private const val DEFAULT_MAX_EDGE_PX = 2480
 
-    fun build(imageFiles: List<File>, out: File) {
+    fun build(imageFiles: List<File>, out: File, maxEdgePx: Int = DEFAULT_MAX_EDGE_PX) {
         val doc = PdfDocument()
         try {
             var pageNumber = 1
             for (file in imageFiles) {
-                val bitmap = decodeBounded(file) ?: continue
+                val bitmap = decodeBounded(file, maxEdgePx) ?: continue
                 val info = PdfDocument.PageInfo
                     .Builder(bitmap.width, bitmap.height, pageNumber)
                     .create()
@@ -36,14 +36,14 @@ object PdfBuilder {
         }
     }
 
-    private fun decodeBounded(file: File): Bitmap? {
+    private fun decodeBounded(file: File, maxEdgePx: Int): Bitmap? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(file.path, bounds)
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
         var sample = 1
         val longest = maxOf(bounds.outWidth, bounds.outHeight)
-        while (longest / sample > MAX_EDGE_PX) sample *= 2
+        while (longest / sample > maxEdgePx) sample *= 2
 
         val opts = BitmapFactory.Options().apply { inSampleSize = sample }
         return BitmapFactory.decodeFile(file.path, opts)
