@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -53,6 +54,7 @@ fun PageManagerScreen(
     onMoveUp: (Int) -> Unit,
     onMoveDown: (Int) -> Unit,
     onDeletePage: (Int) -> Unit,
+    onAnnotate: (Int) -> Unit,
     onBack: () -> Unit
 ) {
     var deleteIndex by remember { mutableStateOf<Int?>(null) }
@@ -90,6 +92,7 @@ fun PageManagerScreen(
                     isLast = index == doc.pageImages.lastIndex,
                     onMoveUp = { onMoveUp(index) },
                     onMoveDown = { onMoveDown(index) },
+                    onAnnotate = { onAnnotate(index) },
                     onDelete = { deleteIndex = index }
                 )
             }
@@ -113,6 +116,7 @@ private fun PageRow(
     isLast: Boolean,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
+    onAnnotate: () -> Unit,
     onDelete: () -> Unit
 ) {
     val context = LocalContext.current
@@ -153,6 +157,9 @@ private fun PageRow(
             }
             IconButton(onClick = onMoveDown, enabled = !isLast) {
                 Icon(Icons.Default.ArrowDownward, contentDescription = "Move down")
+            }
+            IconButton(onClick = onAnnotate) {
+                Icon(Icons.Default.Edit, contentDescription = "Annotate page")
             }
             IconButton(onClick = onDelete) {
                 Icon(

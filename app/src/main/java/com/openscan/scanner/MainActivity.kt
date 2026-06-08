@@ -23,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.openscan.scanner.data.ScannedDocument
 import com.openscan.scanner.scanner.DocumentScanner
 import com.openscan.scanner.ui.AboutScreen
+import com.openscan.scanner.ui.AnnotateScreen
 import com.openscan.scanner.ui.HomeScreen
 import com.openscan.scanner.ui.HomeViewModel
 import com.openscan.scanner.ui.OcrResultScreen
@@ -37,6 +38,7 @@ private sealed interface Screen {
     object About : Screen
     data class Ocr(val title: String, val text: String) : Screen
     data class Pages(val docId: String) : Screen
+    data class Annotate(val docId: String, val pageIndex: Int) : Screen
 }
 
 class MainActivity : ComponentActivity() {
@@ -160,7 +162,30 @@ class MainActivity : ComponentActivity() {
                                             if (updated == null) screen = Screen.Home
                                         }
                                     },
+                                    onAnnotate = { index -> screen = Screen.Annotate(doc.id, index) },
                                     onBack = { screen = Screen.Home }
+                                )
+                            }
+                        }
+
+                        is Screen.Annotate -> {
+                            BackHandler { screen = Screen.Pages(current.docId) }
+                            val doc = state.documents.firstOrNull { it.id == current.docId }
+                            val page = doc?.pageImages?.getOrNull(current.pageIndex)
+                            if (doc == null || page == null) {
+                                screen = Screen.Home
+                            } else {
+                                AnnotateScreen(
+                                    page = page,
+                                    pageNumber = current.pageIndex + 1,
+                                    onSave = { strokes ->
+                                        busyMessage = "Saving annotations…"
+                                        viewModel.annotatePage(doc, current.pageIndex, strokes) {
+                                            busyMessage = null
+                                            screen = Screen.Pages(doc.id)
+                                        }
+                                    },
+                                    onBack = { screen = Screen.Pages(doc.id) }
                                 )
                             }
                         }

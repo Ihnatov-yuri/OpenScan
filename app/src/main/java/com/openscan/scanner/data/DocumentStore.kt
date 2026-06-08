@@ -102,6 +102,19 @@ class DocumentStore(private val context: Context, private val prefs: AppPrefs) {
         return requireNotNull(read(dir)) { "Failed to harmonize lighting" }
     }
 
+    /** Burn freehand annotations into one page, then rebuild the PDF. */
+    fun annotatePage(
+        doc: ScannedDocument,
+        index: Int,
+        strokes: List<AnnotationRenderer.Stroke>
+    ): ScannedDocument {
+        val dir = doc.pdfFile.parentFile ?: error("Missing document folder")
+        val page = doc.pageImages.getOrNull(index) ?: return doc
+        AnnotationRenderer.burnIn(page, strokes)
+        regeneratePdf(dir)
+        return requireNotNull(read(dir)) { "Failed to annotate page" }
+    }
+
     /** Cache OCR text for a document so it becomes searchable. */
     fun writeText(doc: ScannedDocument, text: String) {
         val dir = doc.pdfFile.parentFile ?: return

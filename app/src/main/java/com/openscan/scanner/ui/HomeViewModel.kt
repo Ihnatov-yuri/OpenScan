@@ -164,6 +164,19 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun annotatePage(
+        doc: ScannedDocument,
+        index: Int,
+        strokes: List<com.openscan.scanner.data.AnnotationRenderer.Stroke>,
+        onDone: (ScannedDocument) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            val updated = withContext(Dispatchers.IO) { store.annotatePage(doc, index, strokes) }
+            refresh()
+            onDone(updated)
+        }
+    }
+
     fun rename(doc: ScannedDocument, newName: String) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) { store.rename(doc, newName) }
