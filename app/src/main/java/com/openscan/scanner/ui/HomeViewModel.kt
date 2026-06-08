@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.openscan.scanner.data.AppPrefs
 import com.openscan.scanner.data.DocumentStore
+import com.openscan.scanner.data.LibraryView
 import com.openscan.scanner.data.PdfQuality
 import com.openscan.scanner.data.ScannedDocument
 import com.openscan.scanner.data.SortOrder
@@ -23,6 +24,7 @@ data class HomeUiState(
     val documents: List<ScannedDocument> = emptyList(),
     val query: String = "",
     val sortOrder: SortOrder = SortOrder.NEWEST,
+    val viewMode: LibraryView = LibraryView.LIST,
     val totalDocs: Int = 0,
     val storageBytes: Long = 0L
 ) {
@@ -41,11 +43,17 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
 
     private var allDocs: List<ScannedDocument> = emptyList()
 
-    private val _uiState = MutableStateFlow(HomeUiState())
+    private val _uiState = MutableStateFlow(HomeUiState(viewMode = prefs.libraryView))
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     init {
         refresh()
+    }
+
+    fun toggleView() {
+        val next = if (_uiState.value.viewMode == LibraryView.LIST) LibraryView.GRID else LibraryView.LIST
+        prefs.libraryView = next
+        _uiState.update { it.copy(viewMode = next) }
     }
 
     fun refresh() {
@@ -69,13 +77,16 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         refresh()
     }
 
-    /** Recompute the displayed list from [allDocs] using the current query. */
+    /** Recompute the displayed list from [allDocs] using the current query (name + OCR text). */
     private fun applyFilter() {
         val query = _uiState.value.query.trim()
         val filtered = if (query.isEmpty()) {
             allDocs
         } else {
-            allDocs.filter { it.name.contains(query, ignoreCase = true) }
+            allDocs.filter { doc ->
+                doc.name.contains(query, ignoreCase = true) ||
+                    (doc.cachedText?.contains(query, ignoreCase = true) == true)
+            }
         }
         _uiState.update { it.copy(documents = filtered) }
     }
@@ -86,6 +97,7 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             val doc = withContext(Dispatchers.IO) { store.save(pageUris) }
             refresh()
             onSaved(doc)
+            cacheTextInBackground(doc)
         }
     }
 
@@ -95,6 +107,44 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
             val updated = withContext(Dispatchers.IO) { store.append(doc, pageUris) }
             refresh()
             onDone(updated)
+            cacheTextInBackground(updated)
+        }
+    }
+
+    fun merge(docs: List<ScannedDocument>, onDone: (ScannedDocument) -> Unit = {}) {
+        if (docs.size < 2) return
+        viewModelScope.launch {
+            val merged = withContext(Dispatchers.IO) { store.merge(docs) }
+            refresh()
+            onDone(merged)
+            cacheTextInBackground(merged)
+        }
+    }
+
+    fun harmonizeLighting(doc: ScannedDocument, onDone: (ScannedDocument) -> Unit = {}) {
+        viewModelScope.launch {
+            val updated = withContext(Dispatchers.IO) { store.harmonizeLighting(doc) }
+            refresh()
+            onDone(updated)
+        }
+    }
+
+    fun deleteMany(docs: List<ScannedDocument>) {
+        if (docs.isEmpty()) return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) { docs.forEach { store.delete(it) } }
+            refresh()
+        }
+    }
+
+    /** Run OCR off the main thread and cache it so the document becomes searchable. */
+    private fun cacheTextInBackground(doc: ScannedDocument) {
+        viewModelScope.launch {
+            val ok = runCatching {
+                val text = TextExtractor.extract(getApplication(), doc.pageImages)
+                withContext(Dispatchers.IO) { store.writeText(doc, text) }
+            }.isSuccess
+            if (ok) refresh()
         }
     }
 

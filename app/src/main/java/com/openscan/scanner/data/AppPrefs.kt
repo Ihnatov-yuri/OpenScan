@@ -9,6 +9,9 @@ enum class PdfQuality(val label: String, val maxEdgePx: Int) {
     LOW("Low — smallest file", 1240)
 }
 
+/** How the document library is laid out. */
+enum class LibraryView { LIST, GRID }
+
 /** Tiny SharedPreferences-backed settings store. */
 class AppPrefs(context: Context) {
 
@@ -22,7 +25,16 @@ class AppPrefs(context: Context) {
             prefs.edit().putString(KEY_PDF_QUALITY, value.name).apply()
         }
 
+    var libraryView: LibraryView
+        get() = runCatching {
+            LibraryView.valueOf(prefs.getString(KEY_LIBRARY_VIEW, LibraryView.LIST.name)!!)
+        }.getOrDefault(LibraryView.LIST)
+        set(value) {
+            prefs.edit().putString(KEY_LIBRARY_VIEW, value.name).apply()
+        }
+
     private companion object {
         const val KEY_PDF_QUALITY = "pdf_quality"
+        const val KEY_LIBRARY_VIEW = "library_view"
     }
 }

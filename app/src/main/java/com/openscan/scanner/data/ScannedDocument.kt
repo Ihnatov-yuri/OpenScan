@@ -12,7 +12,9 @@ data class ScannedDocument(
     val createdAt: Long,
     val sizeBytes: Long,
     val pdfFile: File,
-    val pageImages: List<File>
+    val pageImages: List<File>,
+    /** Cached OCR text used for full-text search; null if not yet extracted. */
+    val cachedText: String? = null
 ) {
     val pageCount: Int get() = pageImages.size
     val thumbnailFile: File? get() = pageImages.firstOrNull()

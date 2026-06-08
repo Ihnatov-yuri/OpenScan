@@ -66,8 +66,46 @@ class DocumentStore(private val context: Context, private val prefs: AppPrefs) {
     fun append(doc: ScannedDocument, pageUris: List<Uri>): ScannedDocument {
         val dir = doc.pdfFile.parentFile ?: error("Missing document folder")
         copyPages(pageUris, dir, startIndex = doc.pageImages.size)
+        File(dir, TEXT_FILE).delete() // stale after new pages; will be re-extracted
         regeneratePdf(dir)
         return requireNotNull(read(dir)) { "Failed to append pages" }
+    }
+
+    /**
+     * Combine several documents into a new one, concatenating all their pages
+     * in the given order. The originals are left untouched.
+     */
+    fun merge(docs: List<ScannedDocument>, displayName: String? = null): ScannedDocument {
+        require(docs.isNotEmpty()) { "Nothing to merge" }
+        val timestamp = System.currentTimeMillis()
+        val id = "scan_" + FILE_STAMP.format(Date(timestamp))
+        val dir = File(root, id).apply { mkdirs() }
+
+        var index = 0
+        docs.forEach { doc ->
+            doc.pageImages.forEach { page ->
+                val dest = File(dir, "%s%03d.jpg".format(PAGE_PREFIX, index))
+                page.inputStream().use { input -> dest.outputStream().use { input.copyTo(it) } }
+                index++
+            }
+        }
+        writeName(dir, displayName ?: ("Merged " + DISPLAY_STAMP.format(Date(timestamp))))
+        regeneratePdf(dir)
+        return requireNotNull(read(dir)) { "Failed to merge documents" }
+    }
+
+    /** Even out the lighting/exposure across all pages, then rebuild the PDF. */
+    fun harmonizeLighting(doc: ScannedDocument): ScannedDocument {
+        val dir = doc.pdfFile.parentFile ?: error("Missing document folder")
+        LightingHarmonizer.harmonize(doc.pageImages)
+        regeneratePdf(dir)
+        return requireNotNull(read(dir)) { "Failed to harmonize lighting" }
+    }
+
+    /** Cache OCR text for a document so it becomes searchable. */
+    fun writeText(doc: ScannedDocument, text: String) {
+        val dir = doc.pdfFile.parentFile ?: return
+        File(dir, TEXT_FILE).writeText(text)
     }
 
     /** Reorder the document's pages (moving the page at [from] to [to]) and rebuild its PDF. */
@@ -159,13 +197,15 @@ class DocumentStore(private val context: Context, private val prefs: AppPrefs) {
         val pdf = File(dir, PDF_NAME)
         if (!pdf.exists() || pages.isEmpty()) return null
         val id = dir.name
+        val textFile = File(dir, TEXT_FILE)
         return ScannedDocument(
             id = id,
             name = readName(dir, fallback = id),
             createdAt = parseTimestamp(id) ?: dir.lastModified(),
             sizeBytes = pdf.length(),
             pdfFile = pdf,
-            pageImages = pages
+            pageImages = pages,
+            cachedText = if (textFile.exists()) runCatching { textFile.readText() }.getOrNull() else null
         )
     }
 
@@ -223,6 +263,7 @@ class DocumentStore(private val context: Context, private val prefs: AppPrefs) {
         private const val PAGE_PREFIX = "page_"
         private const val PDF_NAME = "document.pdf"
         private const val NAME_FILE = "name.txt"
+        private const val TEXT_FILE = "text.txt"
         private val FILE_STAMP = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
         private val DISPLAY_STAMP = SimpleDateFormat("MMM d, yyyy 'at' h:mm a", Locale.getDefault())
     }

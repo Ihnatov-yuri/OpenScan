@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
                     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
                     var pendingAppend by remember { mutableStateOf<ScannedDocument?>(null) }
                     var ocrRunning by remember { mutableStateOf(false) }
+                    var busyMessage by remember { mutableStateOf<String?>(null) }
 
                     val scannerLauncher = rememberLauncherForActivityResult(
                         ActivityResultContracts.StartIntentSenderForResult()
@@ -115,11 +116,21 @@ class MainActivity : ComponentActivity() {
                             onOpen = { doc -> openPdf(context, viewModel.store.contentUri(doc.pdfFile)) },
                             onShare = { doc -> sharePdf(context, viewModel.store.contentUri(doc.pdfFile), doc.name) },
                             onExport = { doc, cb -> viewModel.exportToDownloads(doc, cb) },
+                            onToggleView = { viewModel.toggleView() },
                             onAppend = { doc -> launchScanner(doc) },
                             onManagePages = { doc -> screen = Screen.Pages(doc.id) },
+                            onHarmonize = { doc ->
+                                busyMessage = "Harmonizing lighting…"
+                                viewModel.harmonizeLighting(doc) { busyMessage = null }
+                            },
                             onExtractText = { doc -> runOcr(doc) },
                             onRename = { doc, newName -> viewModel.rename(doc, newName) },
-                            onDelete = { doc -> viewModel.delete(doc) }
+                            onDelete = { doc -> viewModel.delete(doc) },
+                            onMerge = { docs ->
+                                busyMessage = "Merging documents…"
+                                viewModel.merge(docs) { busyMessage = null }
+                            },
+                            onDeleteMany = { docs -> viewModel.deleteMany(docs) }
                         )
 
                         Screen.About -> {
@@ -167,6 +178,7 @@ class MainActivity : ComponentActivity() {
                     if (ocrRunning) {
                         ProgressDialog(message = "Extracting text…")
                     }
+                    busyMessage?.let { ProgressDialog(message = it) }
                 }
             }
         }
