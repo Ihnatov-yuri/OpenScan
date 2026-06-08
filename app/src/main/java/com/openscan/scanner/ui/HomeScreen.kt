@@ -5,9 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -19,13 +22,13 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,12 +36,14 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +60,9 @@ import com.openscan.scanner.data.SortOrder
 import com.openscan.scanner.ui.components.DocumentGridCell
 import com.openscan.scanner.ui.components.DocumentRow
 import com.openscan.scanner.ui.components.EmptyState
+import com.openscan.scanner.ui.components.OrangeDot
+import com.openscan.scanner.ui.theme.InkBlack
+import com.openscan.scanner.ui.theme.PaperWhite
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,19 +106,43 @@ fun HomeScreen(
 
     BackHandler(enabled = selectionMode) { clearSelection() }
 
+    val barColors = TopAppBarDefaults.topAppBarColors(
+        containerColor = InkBlack,
+        navigationIconContentColor = PaperWhite,
+        titleContentColor = PaperWhite,
+        actionIconContentColor = PaperWhite
+    )
+
     Scaffold(
         topBar = {
             if (selectionMode) {
-                SelectionTopBar(
-                    count = selectedIds.size,
-                    canMerge = selectedIds.size >= 2,
-                    onClose = { clearSelection() },
-                    onMerge = { onMerge(selectedDocs); clearSelection() },
-                    onDelete = { batchDeleteConfirm = true }
+                TopAppBar(
+                    colors = barColors,
+                    title = { Text("${selectedIds.size} SELECTED", style = MaterialTheme.typography.titleLarge) },
+                    navigationIcon = {
+                        IconButton(onClick = { clearSelection() }) {
+                            Icon(Icons.Default.Close, contentDescription = "Cancel selection")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { onMerge(selectedDocs); clearSelection() }, enabled = selectedIds.size >= 2) {
+                            Icon(Icons.Default.CallMerge, contentDescription = "Merge into one document")
+                        }
+                        IconButton(onClick = { batchDeleteConfirm = true }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete selected")
+                        }
+                    }
                 )
             } else {
                 TopAppBar(
-                    title = { Text("OpenScan") },
+                    colors = barColors,
+                    title = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("OpenScan", style = MaterialTheme.typography.titleLarge, color = PaperWhite)
+                            Spacer(Modifier.width(3.dp))
+                            OrangeDot(size = 7)
+                        }
+                    },
                     actions = {
                         IconButton(onClick = onToggleView) {
                             if (state.viewMode == LibraryView.LIST) {
@@ -153,17 +185,19 @@ fun HomeScreen(
         floatingActionButton = {
             if (!selectionMode) {
                 ExtendedFloatingActionButton(
-                    text = { Text("Scan") },
-                    icon = { Icon(Icons.Default.DocumentScanner, contentDescription = null) },
-                    onClick = onScan
-                )
+                    onClick = onScan,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Text("Scan", style = MaterialTheme.typography.titleLarge)
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (state.totalDocs > 0 && !selectionMode) {
-                OutlinedTextField(
+                TextField(
                     value = state.query,
                     onValueChange = onQueryChange,
                     singleLine = true,
@@ -175,12 +209,20 @@ fun HomeScreen(
                             }
                         }
                     },
-                    placeholder = { Text("Search name or text inside") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                    placeholder = {
+                        Text("SEARCH NAME OR TEXT", style = MaterialTheme.typography.labelMedium)
+                    },
+                    colors = TextFieldDefaults.textFieldColors(
+                        containerColor = MaterialTheme.colorScheme.background,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline,
+                        cursorColor = MaterialTheme.colorScheme.primary
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
+            // Top-level joint: a heavier ink rule (1.5px) below the masthead/search.
+            Divider(thickness = 1.5.dp, color = MaterialTheme.colorScheme.onBackground)
 
             Box(modifier = Modifier.fillMaxSize()) {
                 when {
@@ -255,33 +297,6 @@ fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SelectionTopBar(
-    count: Int,
-    canMerge: Boolean,
-    onClose: () -> Unit,
-    onMerge: () -> Unit,
-    onDelete: () -> Unit
-) {
-    TopAppBar(
-        title = { Text("$count selected") },
-        navigationIcon = {
-            IconButton(onClick = onClose) {
-                Icon(Icons.Default.Close, contentDescription = "Cancel selection")
-            }
-        },
-        actions = {
-            IconButton(onClick = onMerge, enabled = canMerge) {
-                Icon(Icons.Default.CallMerge, contentDescription = "Merge into one document")
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete selected")
-            }
-        }
-    )
-}
-
 @Composable
 private fun DocumentList(
     state: HomeUiState,
@@ -298,10 +313,7 @@ private fun DocumentList(
     onRename: (ScannedDocument) -> Unit,
     onDelete: (ScannedDocument) -> Unit
 ) {
-    LazyColumn(
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    LazyColumn(contentPadding = PaddingValues(bottom = 96.dp)) {
         items(state.documents, key = { it.id }) { doc ->
             DocumentRow(
                 doc = doc,
@@ -318,6 +330,7 @@ private fun DocumentList(
                 onRename = { onRename(doc) },
                 onDelete = { onDelete(doc) }
             )
+            Divider(thickness = 1.dp, color = MaterialTheme.colorScheme.outline)
         }
     }
 }
@@ -340,9 +353,9 @@ private fun DocumentGrid(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         gridItems(state.documents, key = { it.id }) { doc ->
             DocumentGridCell(
