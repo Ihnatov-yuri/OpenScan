@@ -40,6 +40,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.openscan.scanner.data.DataExtractor
 import com.openscan.scanner.data.DataType
+import com.openscan.scanner.ui.components.Eyebrow
+import com.openscan.scanner.ui.components.Hairline
+import com.openscan.scanner.ui.components.InkRule
+import com.openscan.scanner.ui.components.editorialBarColors
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -55,7 +59,8 @@ fun OcrResultScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Text: $title", maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                colors = editorialBarColors(),
+                title = { Text(text = "TEXT · ${title.uppercase()}", style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
@@ -76,43 +81,42 @@ fun OcrResultScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
         ) {
-            if (detected.isNotEmpty()) {
-                Text(
-                    "Detected",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(Modifier.height(8.dp))
-                detected.forEach { (type, values) ->
-                    Text(
-                        type.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        values.forEach { value ->
-                            AssistChip(
-                                onClick = { actionFor(context, type, value) },
-                                label = { Text(value, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-                            )
+            InkRule()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(20.dp)
+            ) {
+                if (detected.isNotEmpty()) {
+                    Eyebrow("Detected")
+                    Spacer(Modifier.height(12.dp))
+                    detected.forEach { (type, values) ->
+                        Text(
+                            type.label.uppercase(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            values.forEach { value ->
+                                AssistChip(
+                                    onClick = { actionFor(context, type, value) },
+                                    label = { Text(value, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                                )
+                            }
                         }
+                        Spacer(Modifier.height(12.dp))
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Hairline(modifier = Modifier.padding(vertical = 8.dp))
                 }
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
-            }
 
-            Text(
-                "Full text",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Spacer(Modifier.height(8.dp))
-            SelectionContainer {
-                Text(text = content, style = MaterialTheme.typography.bodyMedium)
+                Eyebrow("Full text")
+                Spacer(Modifier.height(12.dp))
+                SelectionContainer {
+                    Text(text = content, style = MaterialTheme.typography.bodyMedium)
+                }
             }
         }
     }

@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.openscan.scanner.data.AnnotationRenderer
+import com.openscan.scanner.ui.components.editorialBarColors
 import java.io.File
 
 private class PenStroke(val color: Color, val widthPx: Float) {
@@ -86,7 +87,8 @@ fun AnnotateScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Annotate · page $pageNumber") },
+                colors = editorialBarColors(),
+                title = { Text("ANNOTATE · PAGE $pageNumber", style = MaterialTheme.typography.titleLarge) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
