@@ -1,24 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Editorial app icon foreground: a paper-white "O" (the wordmark initial)
-    and the signature orange dot — the distilled "OpenScan." masthead.
-    Marks sit inside the adaptive-icon safe zone (centre radius 36).
--->
+<!-- Monochrome layer for Android 13+ themed icons (system tints the single color). -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <!-- The "O" ring (outer minus inner via even-odd). -->
     <path
-        android:fillColor="#FAF9F6"
+        android:fillColor="#000000"
         android:fillType="evenOdd"
         android:pathData="M21,52 a25,25 0 1,0 50,0 a25,25 0 1,0 -50,0 z
                           M31.5,52 a14.5,14.5 0 1,0 29,0 a14.5,14.5 0 1,0 -29,0 z" />
-
-    <!-- The orange dot. -->
     <path
-        android:fillColor="#FF4726"
+        android:fillColor="#000000"
         android:pathData="M66.5,74 a7.5,7.5 0 1,0 15,0 a7.5,7.5 0 1,0 -15,0 z" />
 </vector>
